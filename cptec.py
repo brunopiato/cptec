@@ -1,17 +1,17 @@
 # https://mailtrap.io/blog/outlook-smtp/
 # https://www.youtube.com/watch?v=CgvOCXs8Xec
+# https://mailtrap.io/blog/python-send-email/
+# https://medium.com/@tempmailwithpassword/automating-email-attachments-in-outlook-with-python-a07224047434
 
 import warnings
 warnings.filterwarnings('ignore')
 
-import os
-import creds
-import smtplib
+import time
 import requests
 import pandas as pd
+import win32com.client
 from bs4 import BeautifulSoup
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import plotly.graph_objects as go
 
 
 def data_get(cidade = 'jundiai'):
@@ -30,31 +30,41 @@ def data_get(cidade = 'jundiai'):
 
     resultados = []
     for dia in previsoes:
-        resultados.append([dia('dia')[0].text, dia('maxima')[0].text, dia('minima')[0].text])
-    df_results = pd.DataFrame(resultados, columns=['date', 'max', 'min'])
-    df_results.to_csv(r'C:\Users\piato\Desktop\previsao.csv', index=False)
+        resultados.append([dia('dia')[0].text, dia('maxima')[0].text, dia('minima')[0].text, dia('tempo')[0].text.strip()])
+    df_results = pd.DataFrame(resultados, columns=['date', 'max', 'min', 'tempo'])
+    df_results['date'] = pd.to_datetime(df_results['date'])
+    df_results = df_results.astype({'max':'int', 'min':'int'})
+    df_results.to_csv(r'C:\Users\piato\OneDrive\Área de Trabalho\previsao.csv', index=False)
     print("Cidade escolhida: ", nome_cidade.capitalize(), '\n\n', df_results)
-
     return df_results
 
+def send_email():
+    sender = "bruno.ipynb@outlook.com"
+    recipient = "piatobio@gmail.com"
+    outlook = win32com.client.Dispatch("Outlook.Application")
+    mail = outlook.CreateItem(0)
+    mail.To = recipient
+    mail.Subject = "Previsão do tempo para a semana"
+    mail.Body = f"{time.asctime()}: Previsão do tempo para a semana."
+    attachments = [r'C:\Users\piato\OneDrive\Área de Trabalho\previsao.csv', r'C:\Users\piato\OneDrive\Área de Trabalho\fig1.png']
+    for attachment in attachments:
+        mail.Attachments.Add(attachment)
+    mail.Send()
 
-def email_new(df):
-    message = MIMEMultipart()
-    message['Subject'] = "New Data from Today"
-    message['From'] = creds.sender
-    message['To'] = creds.recipient
+def draw_graph(data):
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=data['date'], y=data['max'],
+                        mode='lines+markers',
+                        name='max'))
+    fig.add_trace(go.Scatter(x=data['date'], y=data['min'],
+                        mode='lines+markers',
+                        name='min'))
+    fig.update_layout(template="plotly_dark", title="Temperatura máx e min")
+    fig.show()
 
-    html = MIMEText(df.to_html(index=False), "html")
-    message.attach(html)
-    
-    with smtplib.SMTP("smtp.office365.com", 587) as server:
-        server.starttls()
-        server.login(creds.sender, creds.password)
-        server.sendmail(creds.sender, creds.recipient, message.as_string())
+    fig.write_image(r"C:\Users\piato\OneDrive\Área de Trabalho\fig1.png")
 
-    print('E-mail enviado com sucesso!')
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     data = data_get()
-    email_new(data)
+    draw_graph(data)
+    send_email()

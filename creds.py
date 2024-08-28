@@ -1,3 +1,3 @@
 sender = 'bruno.ipynb@outlook.com'
-password = 'brwgyhuoktfuvjrf'
+password = 'gmnwczduxfdjkdag'
 recipient = 'piato@gmail.com'
