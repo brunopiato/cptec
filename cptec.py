@@ -44,8 +44,8 @@ def send_email():
     outlook = win32com.client.Dispatch("Outlook.Application")
     mail = outlook.CreateItem(0)
     mail.To = recipient
-    mail.Subject = "Previsão do tempo para a semana"
-    mail.Body = f"{time.asctime()}: Previsão do tempo para a semana."
+    mail.Subject = "Previsão do tempo para a semana."
+    mail.Body = f"{time.asctime()}: Previsão do tempo para a semana.\nAs siglas das condições do tempo podem ser encontradas em: http://servicos.cptec.inpe.br/XML/#condicoes-tempo"
     attachments = [r'C:\Users\piato\OneDrive\Área de Trabalho\previsao.csv', r'C:\Users\piato\OneDrive\Área de Trabalho\fig1.png']
     for attachment in attachments:
         mail.Attachments.Add(attachment)
